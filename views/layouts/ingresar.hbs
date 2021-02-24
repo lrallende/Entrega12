@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://cdn.socket.io/3.1.1/socket.io.min.js"
+        integrity="sha384-gDaozqUvc4HTgo8iZjwth73C6dDDeOJsAgpxBcMpZYztUfjHXpzrpdrHRdVp8ySO"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingresar Productos</title>
+</head>
+
+<body>
+    <div class="row">
+        <div class="col-3"></div>
+        <div class="col-6">
+            <form action="/ingresar" enctype="application/x-www-form-urlencoded" method="POST" name="myform">
+                <div class="mb-4">
+                    <h1>Formulario</h1>
+                </div>
+                <br>
+                <br>
+                <div class="mb-4">
+                    <label class="form-label">Producto</label>
+                    <input type="text" class="form-control" name="title">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Precio</label>
+                    <input type="text" class="form-control" name="price">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Foto</label>
+                    <input type="text" class="form-control" name="thumbnail">
+                    <div>Ingrese una url con la imagen.</div>
+                </div>
+
+            </form>
+            <button class="btn btn-primary" id="botonSubmit">Submit</button>
+            <br>
+            <br>
+            {{#if listExists}}
+            <ul style="margin: 0px; padding: 0px" id="prodList">
+                {{#each productos}}
+                <div class="row align-items-center" style="background-color:#aaa">
+                    <div class="col w-25 p-3">
+                        <h4>{{this.title}}</h4>
+                    </div>
+                    <div class="col w-25 p-3">
+                        <h4>{{this.price}}</h4>
+                    </div>
+                    <div class="col w-50 p-3"><img src={{this.thumbnail}} style="max-width:50px"></div>
+                </div>
+                {{/each}}
+            </ul>
+            {{else}}
+            <div class="row align-items-center" style="background-color:#aaa">
+                <h1>No hay productos</h1>
+            </div>
+            {{/if}}
+
+        </div>
+        <div class="col-3"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+
+    <script>
+        const socket = io();
+        let source = `{{#productos}}
+                                    <div class="row align-items-center" style="background-color:#aaa">
+                                        <div class="col w-25 p-3">
+                                            <h4>{{title}}</h4>
+                                        </div>
+                                        <div class="col w-25 p-3">
+                                            <h4>{{price}}</h4>
+                                        </div>
+                                        <div class="col w-50 p-3"><img src={{thumbnail}} style="max-width:50px"></div>
+                                    </div>
+                                {{/productos}}`;
+
+        let templateH = Handlebars.compile(source)
+
+        socket.on('coneccion', data => {
+            let usuario = prompt(data)
+            socket.id = usuario
+            socket.emit('bienvenida', `${socket.id} ha logeadx`)
+        })
+
+        document.getElementById("botonSubmit").addEventListener("click", function (event) {
+            let title = document.querySelector("form[name='myform'] input[name='title']");
+            let price = document.querySelector("form[name='myform'] input[name='price']");
+            let thumbnail = document.querySelector("form[name='myform'] input[name='thumbnail']");
+            socket.emit("newProd", {
+                "title": title.value,
+                "price": price.value,
+                "thumbnail": thumbnail.value,
+                "nombre": socket.id
+            });
+            title.value = ''
+            price.value = ''
+            thumbnail.value = ''
+        });
+
+        socket.on("recargar", function (productos) {
+            console.log('Recibiendo evento recargar')
+            let uLista = document.getElementById('prodList')
+            console.log(templateH(productos))
+            return uLista.innerHTML = templateH(productos)
+        })
+
+    </script>
+</body>
+
+</html>
